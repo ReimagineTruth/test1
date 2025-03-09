@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Marketplace - TruthWeb</title> <!-- Adjust title for each page -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <style>
+      /* Same CSS as digitalproducts.html */
+      /* (Copy from digitalproducts.html) */
+    </style>
+</head>
+<body>
+    <header class="sticky-header">
+        <!-- Same header as index.html, adjust active nav item -->
+        <nav class="desktop-nav hidden md:flex items-center">
+            <ul class="flex space-x-4">
+                <li class="nav-item"><a href="/index.html">Home</a></li>
+                <li class="nav-item"><a href="/marketplace.html" class="active">Marketplace</a></li> <!-- Adjust active class -->
+                <li class="nav-item"><a href="/digitalproducts.html">Digital Products</a></li>
+                <li class="nav-item"><a href="/physicalproducts.html">Physical Products</a></li>
+                <li class="nav-item"><a href="/freelanceservices.html">Freelance Services</a></li>
+                <li class="nav-item"><a href="/courses.html">Courses</a></li>
+                <li class="nav-item"><a href="/profile.html">Profile</a></li>
+                <li class="nav-item"><a href="/wallet.html">Wallet</a></li>
+                <li class="nav-item"><a href="/ledger-testnet.html">Ledger Testnet</a></li>
+                <li class="nav-item"><a href="/community.html">Community</a></li>
+                <li class="nav-item"><a href="/developers.html">Developers</a></li>
+                <li class="nav-item"><a href="/about.html">About</a></li>
+            </ul>
+        </nav>
+        <a href="/addtocart.html" class="icon cart-btn" data-count="0"><i class="fas fa-shopping-cart"></i></a>
+        <!-- Rest of header -->
+    </header>
+
+    <nav class="mobile-menu">
+        <!-- Same as index.html, adjust active class -->
+    </nav>
+
+    <main>
+        <section class="hero">
+            <h1 class="glow-text">Marketplace</h1> <!-- Adjust text: Digital Products, Physical Products, etc. -->
+            <p class="text-xl mt-4 md:text-2xl">Browse All Products</p>
+        </section>
+
+        <section id="products" class="py-16 px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Browse Products</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto" id="product-grid"></div>
+        </section>
+    </main>
+
+    <nav class="footer-menu">
+        <!-- Same as index.html -->
+    </nav>
+
+    <footer role="contentinfo">
+        <!-- Same as index.html -->
+    </footer>
+
+    <script>
+      const category = 'all'; // Adjust: 'digital', 'physical', 'freelance', 'courses', or 'all' for marketplace
+
+      fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+          const grid = document.getElementById('product-grid');
+          const filteredProducts = category === 'all' ? products : products.filter(p => p.category.toLowerCase() === category);
+          grid.innerHTML = filteredProducts.map(product => `
+            <div class="card">
+              <img src="${product.image}" alt="${product.title}">
+              <h3 class="text-xl font-semibold mb-2">${product.title}</h3>
+              <p class="text-gray-600 mb-4">${product.description}</p>
+              <p class="text-lg font-bold mb-4">Price: ${product.price} Pi</p>
+              <button class="btn w-full" onclick="addToCart('${product.id}', '${product.title}', ${product.price})">Add to Cart</button>
+              <button class="btn w-full mt-2" onclick="buyNow('${product.id}', ${product.price})">Buy Now</button>
+            </div>
+          `).join('');
+          updateCartCount();
+        })
+        .catch(error => console.error('Error fetching products:', error));
+
+      function addToCart(productId, title, price) {
+        fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, quantity: 1 })
+        })
+          .then(response => response.json())
+          .then(cart => {
+            updateCartCount();
+            alert(`${title} added to cart!`);
+          })
+          .catch(error => console.error('Error adding to cart:', error));
+      }
+
+      function buyNow(productId, price) {
+        fetch('/api/cart/clear', { method: 'POST' })
+          .then(() => {
+            return fetch('/api/cart', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId, quantity: 1 })
+            });
+          })
+          .then(response => response.json())
+          .then(cart => {
+            updateCartCount();
+            const total = price * 1.05; // 5% escrow fee
+            window.location.href = `/payment.html?total=${total.toFixed(2)}`;
+          })
+          .catch(error => console.error('Error during buy now:', error));
+      }
+
+      function updateCartCount() {
+        fetch('/api/cart')
+          .then(response => response.json())
+          .then(cart => {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const cartBtn = document.querySelector('.cart-btn');
+            cartBtn.setAttribute('data-count', totalItems);
+          });
+      }
+
+      /* Copy all other JavaScript from digitalproducts.html for header, menu, search, etc. */
+    </script>
+</body>
+</html>
